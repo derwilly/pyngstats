@@ -5,7 +5,7 @@ A Python script for creating long term ping statistics
 
 Usage
 -----
-The usage of pyngstats is simple, just take a look at the examples below
+The usage of Pyngstats is simple, just take a look at the examples below
 
     # ping a host, stats will be created
     python3 pygnstats.py --ping
@@ -37,3 +37,13 @@ Commandline interface
     
     # printing the version
     --version
+    
+Pinging
+-------
+Use Pygnstats in combination with a cronjob to get a bunch of values the day over to monitor your connection.
+
+    # pinging
+    */1 * * * *    python3 /home/uer/pyngstats/pyngstats.py --ping --host=8.8.8.8 > /home/user/pyngstats/ping.log
+    
+    # report
+    59 23 * * *    python3 /home/user/pyngstats/pyngstats.py --report > /home/user/pygnstats/ping.log
