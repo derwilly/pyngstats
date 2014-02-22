@@ -44,6 +44,8 @@ Use Pygnstats in combination with a cronjob to get a bunch of values the day ove
 
     # pinging
     */1 * * * *    python3 /home/uer/pyngstats/pyngstats.py --ping --host=8.8.8.8 > /home/user/pyngstats/ping.log
-    
+
+And make the report generate daily
+   
     # report
     59 23 * * *    python3 /home/user/pyngstats/pyngstats.py --report > /home/user/pygnstats/ping.log
