@@ -1,4 +1,4 @@
 pyngstats
 =========
 
-Ping Statistics written in Python
+A Python script for creating long term ping statistics
