@@ -38,7 +38,7 @@ Commandline interface
     # printing the version
     --version
 
-![Pyngstats Daily](https://raw.github.com/derwilly/pyngstats/master/screenshots/pyngstats_daily.png)
+![Pyngstats Daily](https://github.com/derwilly/pyngstats/blob/master/screenshots/daily.png)
   
 Pinging
 -------
@@ -52,4 +52,4 @@ And make the report generate daily
     # report
     59 23 * * *    python3 /home/user/pyngstats/pyngstats.py --report > /home/user/pygnstats/ping.log
     
-![Pyngstats Overview](https://raw.github.com/derwilly/pyngstats/master/screenshots/pyngstats_overview.png)
+![Pyngstats Overview](https://github.com/derwilly/pyngstats/blob/master/screenshots/overview.png)
