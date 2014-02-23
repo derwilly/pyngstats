@@ -3,13 +3,14 @@
 pygnstats
 ==============================================================================
 Author:   Ferdinand Saufler <mail@saufler.de>
-Version:  0.21
-Date:     22.02.2014
+Version:  0.22
+Date:     23.02.2014
 
 For documentation please visit https://github.com/derwilly/pyngstats
 ==============================================================================
 '''
 
+import collections
 import os
 import re
 import sys
@@ -17,7 +18,7 @@ import time
 from subprocess import check_output, CalledProcessError
 
 # version
-version = '0.21'
+version = '0.22'
 
 # host
 host = 'example.com' # or 192.168.0.1
@@ -98,6 +99,27 @@ def create_stat_dir(p):
             out('cant create stats.', 'fail')
             return False
             
+def print_version():
+    print(os.path.basename(__file__) + ' version ' + version + '\n' +
+         'please report bugs to <mail@saufler.de>')
+            
+def print_help():
+    print('Arguments:\n' +
+          '  \033[1m --report \033[22m\n' +
+          '      Generates a html-report. \n' + 
+          '  \033[1m --ping \033[22m\n' +
+          '      Do a ping to the given host. \n' + 
+          '  \033[1m --report_dir \033[22m\n' +
+          '      Specify the directory for html-reports. \n' +
+          '  \033[1m --stat_dir \033[22m\n' +
+          '      Specify the directory for statistics. \n' + 
+          '  \033[1m --host \033[22m\n' +
+          '      Take that host for ping. \n' +
+          '  \033[1m --timeout \033[22m\n' +
+          '      Timeout in secounds (1-30).\n' + 
+          '  \033[1m --version \033[22m\n' +
+          '      prints the version of this script.\n')
+                        
 # command line options
 for i in sys.argv:
     if '--report' in i:
@@ -138,24 +160,9 @@ for i in sys.argv:
         except ValueError:
             out('timeout must be an integer between 1 and 30.', 'fail')
     if '--version' in i:
-        print(os.path.basename(__file__) + ' version ' + version + '\n' +
-              'please report bugs to <mail@saufler.de>')
+        print_version()
     if '--help' in i:
-        print('Arguments:\n' +
-              '  \033[1m --report \033[22m\n' +
-              '      Generates a html-report. \n' + 
-              '  \033[1m --ping \033[22m\n' +
-              '      Do a ping to the given host. \n' + 
-              '  \033[1m --report_dir \033[22m\n' +
-              '      Specify the directory for html-reports. \n' +
-              '  \033[1m --stat_dir \033[22m\n' +
-              '      Specify the directory for statistics. \n' + 
-              '  \033[1m --host \033[22m\n' +
-              '      Take that host for ping. \n' +
-              '  \033[1m --timeout \033[22m\n' +
-              '      Timeout in secounds (1-30).\n' + 
-              '  \033[1m --version \033[22m\n' +
-              '      prints the version of this script.\n')
+        print_help()
 
 # if do_ping = True, go on and ping the host           
 if do_ping:
@@ -195,8 +202,7 @@ if do_ping:
 
 # if report = True, generate the hmtl reports    
 if report:
-    report_list = []
-    report_file_list = []
+    report_list = {}
     
     # create report directory if not exists
     if not create_report_dir(report_dir):
@@ -204,7 +210,13 @@ if report:
         raise SystemExit
     
     # generate the html reports
+    file_list = []
     for stat_file in os.listdir(stat_dir):
+        file_list.append(stat_file)
+        
+    file_list = sorted(file_list)
+    
+    for stat_file in file_list:
         count = 0
         latency = 0
         latency_int = 0
@@ -213,10 +225,9 @@ if report:
         lowest_latency = 100.0
         average_latency = 0.0
         sum_latency = 0.0
+        packages_lost = 0
         try:
             with open(report_dir + '/' + stat_file + '.html', 'w+') as f:
-                report_list.append(stat_file)
-                report_file_list.append(report_dir + '/' + stat_file + '.html')
                 html = """
 <!DOCTYPE html>
 <html>
@@ -243,6 +254,7 @@ if report:
                             latency = latency.replace(' ', '')
                             if not latency:
                                 latency = 0
+                                packages_lost += 1
                             try:
                                 latency_float = float(latency)
                                 latency_int = int(latency_float)
@@ -285,7 +297,17 @@ if report:
                             
                             if count > 0:
                                 average_latency = sum_latency / count
-                            
+                        
+                        report_list[stat_file] = { 'name': stat_file,
+                                                   'count': count,
+                                                   'latency': latency,
+                                                   'latency_int': latency_int,
+                                                   'latency_float': latency_float,
+                                                   'highest_latency': highest_latency,
+                                                   'lowest_latency': lowest_latency,
+                                                   'average_latency': average_latency,
+                                                   'sum_latency': sum_latency,
+                                                   'packages_lost': packages_lost }
                         html = html[0:len(html)-1]
                 except ValueError as err:
                     out(str(err), 'fail')
@@ -393,7 +415,7 @@ if report:
                 html += '<b>lowest latency</b>: ' + str(round(lowest_latency,2)) + ' ms<br>\n'
                 html += '<b>highest latency</b>: ' + str(round(highest_latency,2)) + ' ms<br>\n'
                 html += '<b>average latency</b>: ' + str(round(average_latency,2)) + ' ms<br><br>\n'
-                html += 'powered by <b><a href="https://github.com/derwilly/pyngstats">pyngstats</a></b> version: ' + version + '<br><br>\n'
+                html += 'powered by <b><a href="https://github.com/derwilly/pyngstats" target="_blank">pyngstats</a></b> version: ' + version + '<br><br>\n'
                 html+="""
     </body>
 </html>"""
@@ -413,7 +435,7 @@ if report:
     </head>
     <frameset cols="200,*" rows="*" id="mainFrameset">"""
             html+='<frame frameborder="0" id="frame_menu" src="menu.html" name="frame_menu" />'
-            html+='<frame frameborder="0" id="frame_content" src="'+report_list[0]+'.html" name="frame_content" />'
+            html+='<frame frameborder="0" id="frame_content" src="overview.html" name="frame_content" />'
             html+="""
         <noframes>
         <body>
@@ -425,6 +447,137 @@ if report:
             f.write(html)
     except IOError:
        out('cant write file ' + path + '/index.html', 'fail')
+    
+    # Generate overview.html
+    try:
+        with open(report_dir + '/overview.html', 'w+') as f:
+            html = """
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Overview</title>
+        <style type="text/css">
+             body { font-family:arial,helvetica; font-size:12px; }
+        </style>
+        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+        <script type="text/javascript">
+
+          google.load('visualization', '1.1', { packages: ['corechart', 'controls'] });
+          google.setOnLoadCallback(drawChart);
+
+          function drawChart() {
+            var data = google.visualization.arrayToDataTable([
+              ['id', 'Day', 'highest', 'lowest', 'average', 'packages lost'],
+            """
+            c = 0
+            for i in file_list:
+                html+="\n              ["+str(c)+", '"+report_list[i]['name'][4:6]+'.'+report_list[i]['name'][2:4]+'.'+report_list[i]['name'][0:2]+"', "+str(report_list[i]['highest_latency'])+", "+str(report_list[i]['lowest_latency'])+", "+str(round(report_list[i]['average_latency'],3))+", "+str(report_list[i]['packages_lost'])+"],"
+                c += 1
+            html+="""                        
+            ]);
+            
+            var chart = new google.visualization.ChartWrapper({
+                chartType: 'ColumnChart', // try 'LineChart' as well
+                containerId: 'chart_div',
+                dataTable: data,
+                options: {"""
+            html+="title: 'Ping Overview on "+hostname+"',"
+            html+="""
+                    width: 950,
+                    height: 450,
+                    chartArea: {
+                        left: 40,
+                        top: 20,
+                        width: 700,
+                        height: 350
+                    },
+                    hAxis: {
+                        title: 'Day', 
+                        titleTextStyle: {color: '#000'}, 
+                        slantedText: true, 
+                        slantedTextAngle: 45, 
+                        textStyle: { fontSize: 10 }, 
+                        },
+                    legend: {
+                        position: 'right',
+                        textStyle: {
+                            fontSize: 13
+                        }
+                    },
+                },
+                view: {
+                    columns: [1, 2, 3, 4, 5]
+                },
+            });
+                    
+            var control = new google.visualization.ControlWrapper({
+                controlType: 'ChartRangeFilter',
+                containerId: 'control_activity',
+                options: {
+                    filterColumnIndex: 0,
+                    ui: {
+                        chartType: 'LineChart',
+                        snapToData: true, // this bugger is not working
+                        chartOptions: {
+                            width: 950,
+                            height: 70,
+                            chartArea: {
+                                left: 40,
+                                top: 0,
+                                width: 700,
+                                height: 70
+                            },
+                            hAxis: {
+                                textPosition: 'none'
+                            }
+                        },
+                        chartView: {
+                            columns: [0, 2, 3, 4, 5]
+                        },
+                            minRangeSize: 25,
+                    }
+                },
+                state: {
+                    range: {
+                        start: 0,
+                        end: 300
+                    }
+                }
+            });
+            
+            var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard'));
+            
+            google.visualization.events.addListener(control, 'statechange', function () {
+                var v = control.getState();
+                document.getElementById('dbgchart').innerHTML = v.range.start + ' -> ' + v.range.end;
+                return 0;
+            });
+
+            dashboard.bind(control, chart);
+            dashboard.draw(data);
+          }
+        </script>
+    </head>
+    <body>
+        <div id="dashboard">
+            <div id="chart_div"></div>
+            <div id="control_activity"></div>
+        </div>
+        <p style="padding-left:50px;">Range: <span id="dbgchart">Init</span>
+        </p>
+        <br>
+        <br>"""
+            html += '<b>number of records</b>: ' + str(count) + '<br>\n'
+            html += '<b>lowest latency</b>: ' + str(round(lowest_latency,2)) + ' ms<br>\n'
+            html += '<b>highest latency</b>: ' + str(round(highest_latency,2)) + ' ms<br>\n'
+            html += '<b>average latency</b>: ' + str(round(average_latency,2)) + ' ms<br><br>\n'
+            html += 'powered by <b><a href="https://github.com/derwilly/pyngstats" target="_blank">pyngstats</a></b> version: ' + version + '<br><br>\n'
+            html+="""
+    </body>
+</html>"""
+            f.write(html)
+    except IOError:
+       out('cant write file ' + report_dir + '/overview.html', 'fail')
        
     # Generate the menu.html
     try:
@@ -440,10 +593,10 @@ if report:
     </head>
     <body>
         <b>Available Reports:</b><br>"""
-            report_list.sort()
-            report_file_list.sort()
-            for i in reversed(range(0, len(report_list))):
-                html+='<a href="'+report_list[i]+'.html" target="frame_content">'+report_list[i][4:6]+'.'+report_list[i][2:4]+'.'+report_list[i][0:2]+'</a><br>'
+            
+            file_list = reversed(file_list)
+            for j in file_list:
+                html+='<a href="'+report_list[j]['name']+'.html" target="frame_content">'+report_list[j]['name'][4:6]+'.'+report_list[j]['name'][2:4]+'.'+report_list[j]['name'][0:2]+'</a><br>'
                 
             html+="""
     </body>
