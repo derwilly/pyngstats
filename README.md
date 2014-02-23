@@ -37,7 +37,9 @@ Commandline interface
     
     # printing the version
     --version
-    
+
+![Pyngstats Daily](https://raw.github.com/derwilly/pyngstats/master/screenshots/pyngstats_daily.png)
+  
 Pinging
 -------
 Use Pygnstats in combination with a cronjob to get a bunch of values the day over to monitor your connection.
@@ -49,3 +51,5 @@ And make the report generate daily
    
     # report
     59 23 * * *    python3 /home/user/pyngstats/pyngstats.py --report > /home/user/pygnstats/ping.log
+    
+![Pyngstats Overview](https://raw.github.com/derwilly/pyngstats/master/screenshots/pyngstats_overview.png)
