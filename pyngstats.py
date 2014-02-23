@@ -364,12 +364,12 @@ if report:
                         snapToData: true, // this bugger is not working
                         chartOptions: {
                             width: 950,
-                            height: 70,
+                            height: 100,
                             chartArea: {
                                 left: 40,
                                 top: 0,
                                 width: 700,
-                                height: 70
+                                height: 100
                             },
                             hAxis: {
                                 textPosition: 'none'
@@ -467,7 +467,7 @@ if report:
 
           function drawChart() {
             var data = google.visualization.arrayToDataTable([
-              ['id', 'Day', 'highest', 'lowest', 'average', 'packages lost'],
+              ['id', 'Day', 'highest latency in ms', 'lowest latency in ms', 'average latency in ms', 'lost packages'],
             """
             c = 0
             for i in file_list:
@@ -491,6 +491,7 @@ if report:
                         width: 700,
                         height: 350
                     },
+                    colors: ['#777777', '#aaaaaa', '#cccccc', 'red'],
                     hAxis: {
                         title: 'Day', 
                         titleTextStyle: {color: '#000'}, 
@@ -520,13 +521,14 @@ if report:
                         snapToData: true, // this bugger is not working
                         chartOptions: {
                             width: 950,
-                            height: 70,
+                            height: 100,
                             chartArea: {
                                 left: 40,
                                 top: 0,
                                 width: 700,
-                                height: 70
+                                height: 100
                             },
+                            colors: ['#777777', '#aaaaaa', '#cccccc', 'red'],
                             hAxis: {
                                 textPosition: 'none'
                             }
@@ -567,10 +569,6 @@ if report:
         </p>
         <br>
         <br>"""
-            html += '<b>number of records</b>: ' + str(count) + '<br>\n'
-            html += '<b>lowest latency</b>: ' + str(round(lowest_latency,2)) + ' ms<br>\n'
-            html += '<b>highest latency</b>: ' + str(round(highest_latency,2)) + ' ms<br>\n'
-            html += '<b>average latency</b>: ' + str(round(average_latency,2)) + ' ms<br><br>\n'
             html += 'powered by <b><a href="https://github.com/derwilly/pyngstats" target="_blank">pyngstats</a></b> version: ' + version + '<br><br>\n'
             html+="""
     </body>
@@ -593,6 +591,8 @@ if report:
     </head>
     <body>
         <b>Available Reports:</b><br>"""
+            
+            html+='<a href="overview.html" target="frame_content">Overview</a><br>'
             
             file_list = reversed(file_list)
             for j in file_list:
