@@ -32,9 +32,6 @@ timeout = '3'
 # count, stop after sending x requests
 count = 1
 
-# count the loops
-loop = 0
-
 # wait x secounds until next request
 interval = 1
 
@@ -133,11 +130,10 @@ def print_help():
           '  \033[1m --version \033[22m\n' +
           '      prints the version of this script.\n')
           
-def ping():
+def ping(loops = 0):
     latency_str = ''
     pinfo = b''
-    global loop, count
-    loop += 1
+    loops += 1
     
     if not create_stat_dir(stat_dir):
         ('failed to create stat_dir in do_ping procedure.', 'fail')
@@ -170,9 +166,9 @@ def ping():
     except IOError:
         out('cant write to file ' + stat_dir + '/' + time.strftime('%y%m%d'), 'fail')
         
-    if loop < count:
+    if loops < count:
         time.sleep(interval)
-        ping()
+        ping(loops)
              
 # command line options
 for i in sys.argv:
