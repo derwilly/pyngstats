@@ -76,7 +76,7 @@ And make the report generate daily
 
 Templates
 =========
-Pyngstats uses html-templates to for its reports. You can find them in the templates/ directory.
+Pyngstats uses html-templates for its reports. You can find them in the templates/ directory.
 
 +-----------------------+-----------------------------------------------------+
 | template              | Description                                         |
