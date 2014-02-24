@@ -29,6 +29,12 @@ hostname = os.uname()[1]
 # timeout in secounds
 timeout = '3'
 
+# count, stop after sending x requests
+count = 1
+
+# wait x secounds until next request
+interval = 1
+
 # default path
 path = os.path.dirname(os.path.realpath(__file__))
 
@@ -117,6 +123,10 @@ def print_help():
           '      Take that host for ping. \n' +
           '  \033[1m --timeout \033[22m\n' +
           '      Timeout in secounds (1-30).\n' + 
+          '  \033[1m --count \033[22m\n' +
+          '      stop after sending "count" requests.\n' +
+          '  \033[1m --interval \033[22m\n' +
+          '      waiting x secounds until next request.\n' +
           '  \033[1m --version \033[22m\n' +
           '      prints the version of this script.\n')
                         
@@ -159,6 +169,32 @@ for i in sys.argv:
                 out('timeout must be an integer between 1 and 30.', 'fail')
         except ValueError:
             out('timeout must be an integer between 1 and 30.', 'fail')
+    if '--count' in i:
+        tmp = str(re.findall(r"^--count=.*", i)[0])
+        try:
+            tmp = int(tmp[8:])
+            if tmp > 0:
+                count = tmp
+                out('using count = ' + count + '.', 'info')
+            else:
+                count = 1
+                out('count must be an integer > 0. setting count = 1', 'fail')
+        except ValueError:
+            count = 1
+            out('count must be an integer > 0. setting count = 1', 'fail')
+    if '--interval' in i:
+        tmp = str(re.findall(r"^--interval=.*", i)[0])
+        try:
+            tmp = int(tmp[11:])
+            if tmp > 0:
+                interval = tmp
+                out('using interval = ' + interval + '.', 'info')
+            else:
+                interval = 1
+                out('interval must be an integer > 0. setting interval = 1', 'fail')
+        except ValueError:
+            interval = 1
+            out('interval must be an integer > 0. setting interval = 1', 'fail')
     if '--version' in i:
         print_version()
     if '--help' in i:
@@ -217,7 +253,7 @@ if report:
     file_list = sorted(file_list)
     
     for stat_file in file_list:
-        count = 0
+        data_counts = 0
         latency = 0
         latency_int = 0
         latency_float = 0.0
@@ -282,9 +318,9 @@ if report:
                             else:
                                 color = '#000000'
                                 
-                            count = count + 1
+                            data_counts = data_counts + 1
                                 
-                            html+="\n              ['"+str(date)+"', "+str(count)+", "+str(latency)+", 'color: "+color+";'],"
+                            html+="\n              ['"+str(date)+"', "+str(data_counts)+", "+str(latency)+", 'color: "+color+";'],"
                             
                             if(latency_float > 0):
                                 if latency_float > highest_latency:
@@ -295,11 +331,11 @@ if report:
                             
                             sum_latency += latency_float
                             
-                            if count > 0:
-                                average_latency = sum_latency / count
+                            if data_counts > 0:
+                                average_latency = sum_latency / data_counts
                         
                         report_list[stat_file] = { 'name': stat_file,
-                                                   'count': count,
+                                                   'data_counts': data_counts,
                                                    'latency': latency,
                                                    'latency_int': latency_int,
                                                    'latency_float': latency_float,
@@ -411,7 +447,7 @@ if report:
         </p>
         <br>
         <br>"""
-                html += '<b>number of records</b>: ' + str(count) + '<br>\n'
+                html += '<b>number of records</b>: ' + str(data_counts) + '<br>\n'
                 html += '<b>lowest latency</b>: ' + str(round(lowest_latency,2)) + ' ms<br>\n'
                 html += '<b>highest latency</b>: ' + str(round(highest_latency,2)) + ' ms<br>\n'
                 html += '<b>average latency</b>: ' + str(round(average_latency,2)) + ' ms<br><br>\n'
@@ -536,13 +572,13 @@ if report:
                         chartView: {
                             columns: [0, 2, 3, 4, 5]
                         },
-                            minRangeSize: 25,
+                            minRangeSize: 1,
                     }
                 },
                 state: {
                     range: {
                         start: 0,
-                        end: 300
+                        end: 30
                     }
                 }
             });
