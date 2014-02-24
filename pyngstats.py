@@ -10,7 +10,6 @@ For documentation please visit https://github.com/derwilly/pyngstats
 ==============================================================================
 '''
 
-import collections
 import os
 import re
 import sys
@@ -107,28 +106,29 @@ def create_stat_dir(p):
             
 def print_version():
     print(os.path.basename(__file__) + ' version ' + version + '\n' +
-         'please report bugs to <mail@saufler.de>')
+         'please report bugs to <mail@saufler.de>\n' +
+         'https://github.com/derwilly/pyngstats')
             
 def print_help():
-    print('Arguments:\n' +
-          '  \033[1m --report \033[22m\n' +
-          '      Generates a html-report. \n' + 
-          '  \033[1m --ping \033[22m\n' +
-          '      Do a ping to the given host. \n' + 
-          '  \033[1m --report_dir \033[22m\n' +
-          '      Specify the directory for html-reports. \n' +
-          '  \033[1m --stat_dir \033[22m\n' +
-          '      Specify the directory for statistics. \n' + 
-          '  \033[1m --host \033[22m\n' +
-          '      Take that host for ping. \n' +
-          '  \033[1m --timeout \033[22m\n' +
-          '      Timeout in secounds (1-30).\n' + 
-          '  \033[1m --count \033[22m\n' +
-          '      stop after sending "count" requests.\n' +
-          '  \033[1m --interval \033[22m\n' +
-          '      waiting x secounds until next request.\n' +
-          '  \033[1m --version \033[22m\n' +
-          '      prints the version of this script.\n')
+    print('Commandline interface:\n' +
+          '\033[1m --report \033[22m\n' +
+          '    Generates a html-report. \n' + 
+          '\033[1m --ping \033[22m\n' +
+          '    Do a ping to the given host. \n' + 
+          '\033[1m --report_dir \033[22m\n' +
+          '    Specify the directory for html-reports. \n' +
+          '\033[1m --stat_dir \033[22m\n' +
+          '    Specify the directory for statistics. \n' + 
+          '\033[1m --host \033[22m\n' +
+          '    Take that host for ping. \n' +
+          '\033[1m --timeout \033[22m\n' +
+          '    Timeout in secounds (1-30).\n' + 
+          '\033[1m --count \033[22m\n' +
+          '    stop after sending "count" requests.\n' +
+          '\033[1m --interval \033[22m\n' +
+          '    waiting x secounds until next request.\n' +
+          '\033[1m --version \033[22m\n' +
+          '    prints the version of this script.\n')
           
 def ping(loops = 0):
     latency_str = ''

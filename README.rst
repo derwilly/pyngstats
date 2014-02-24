@@ -26,6 +26,13 @@ To generate a report, just use
     
     $ python3 pygnstats.py --report
     
+An Advanced Example:
+
+.. code-block:: bash
+
+    # ping the host 8.8.8.8 5 times every 10 secounds
+    $ python3 pygnstats.py --ping --host=8.8.8.8 --count=10 --interval=5
+    
 Commandline interface
 =====================
 
@@ -62,14 +69,14 @@ Use Pygnstats in combination with a cronjob to get a bunch of values the day ove
 .. code-block:: bash
 
     # pinging
-    */1 * * * *    python3 /home/uer/pyngstats/pyngstats.py --ping --host=8.8.8.8 > /home/user/pyngstats/ping.log
+    */1 * * * *    python3 /home/uer/pyngstats/pyngstats.py --ping --host=8.8.8.8 --stat_dir=/home/user/reports > /home/user/pyngstats/ping.log
 
 And make the report generate daily
 
 .. code-block:: bash
 
     # report
-    59 23 * * *    python3 /home/user/pyngstats/pyngstats.py --report > /home/user/pygnstats/ping.log
+    59 23 * * *    python3 /home/user/pyngstats/pyngstats.py --report --stat_dir=/home/user/reports --report_dir=/var/www/report > /home/user/pygnstats/ping.log
 
 .. image:: https://raw.github.com/derwilly/pyngstats/master/screenshots/overview.png
     :alt: Pyngstats Overview
