@@ -3,7 +3,7 @@
 pygnstats
 ==============================================================================
 Author:   Ferdinand Saufler <mail@saufler.de>
-Version:  0.23
+Version:  0.24
 Date:     24.02.2014
 
 For documentation please visit https://github.com/derwilly/pyngstats
@@ -17,7 +17,7 @@ import time
 from subprocess import check_output, CalledProcessError
 
 # version
-version = '0.23'
+version = '0.24'
 
 # host
 host = 'example.com' # or 192.168.0.1
@@ -42,6 +42,9 @@ report_dir = os.path.dirname(os.path.realpath(__file__)) + '/reports'
 
 # path for measured data
 stat_dir = os.path.dirname(os.path.realpath(__file__)) + '/stats'
+
+# path for html-templates
+template_dir = os.path.dirname(os.path.realpath(__file__)) + '/templates'
 
 # create report?
 do_report = False
@@ -262,7 +265,17 @@ if do_report:
         
     file_list = sorted(file_list)
     
+    # load the template
+    try:
+        with open(template_dir + '/daily.html', 'r') as f:
+            template = f.read()
+            f.close()
+    except IOError:
+       out('cant read file ' + template_dir + '/daily.html', 'fail')
+       raise SystemExit
+    
     for stat_file in file_list:
+        current_template = template
         data_counts = 0
         latency = 0
         latency_int = 0
@@ -272,381 +285,169 @@ if do_report:
         average_latency = 0.0
         sum_latency = 0.0
         packages_lost = 0
+
+        try:
+            with open(stat_dir + '/' + stat_file, 'r') as fi:
+                chart_data = ''
+                for line in fi:                          
+                    date = line[:8]
+                    latency = line[9:]
+                    latency = latency.replace('\n', '')
+                    latency = latency.replace(' ', '')
+                    if not latency:
+                        latency = 0
+                        packages_lost += 1
+                    try:
+                        latency_float = float(latency)
+                        latency_int = int(latency_float)
+                    except:
+                        continue
+                        
+                    # colors
+                    if latency_int >= 0 and latency_int <= 50:
+                        val = (latency_int - 0) * 5
+                        color = '#' + str(rgb_to_hex((val, 255, 0)))
+                    elif latency_int >= 51 and latency_int <= 75:
+                        val = (latency_int - 50) * 10
+                        color = '#' + str(rgb_to_hex((255, 255-val, 0)))
+                    elif latency_int >= 76 and latency_int <= 100:
+                        val = (latency_int - 75) * 10
+                        color = '#' + str(rgb_to_hex((255, 0, val)))
+                    elif latency_int >= 101 and latency_int <= 125:
+                        val = (latency_int - 100) * 10
+                        color = '#' + str(rgb_to_hex((255-val, 0, 255)))
+                    elif latency_int >= 126 and latency_int <= 150:
+                        val = (latency_int - 125) * 10
+                        color = '#' + str(rgb_to_hex((0, val, 255)))
+                    elif latency_int > 150:
+                        color = '#' + str(rgb_to_hex((0, 255, 255)))
+                    else:
+                        color = '#000000'
+                        
+                    data_counts = data_counts + 1
+                        
+                    chart_data+="['"+str(date)+"', "+str(data_counts)+", "+str(latency)+", 'color: "+color+";'],\n              "
+                    
+                    if(latency_float > 0):
+                        if latency_float > highest_latency:
+                            highest_latency = latency_float
+                        if latency_float < lowest_latency:
+                            lowest_latency = latency_float
+                            
+                    
+                    sum_latency += latency_float
+                    
+                    if data_counts > 0:
+                        average_latency = sum_latency / data_counts
+                
+                report_list[stat_file] = { 'name': stat_file,
+                                           'data_counts': data_counts,
+                                           'latency': latency,
+                                           'latency_int': latency_int,
+                                           'latency_float': latency_float,
+                                           'highest_latency': highest_latency,
+                                           'lowest_latency': lowest_latency,
+                                           'average_latency': average_latency,
+                                           'sum_latency': sum_latency,
+                                           'packages_lost': packages_lost }
+                chart_data = chart_data[0:len(chart_data)-16]
+                current_template = current_template.replace('%chart_data%', chart_data)
+        except ValueError as err:
+            out(str(err), 'fail')
+        except IOError as err:
+            out(str(err), 'fail')
+        except TypeError as err:
+            out(str(err), 'fail')
+        #except:
+         #   out('Unexpected error:' +  str(sys.exc_info()[0]), 'fail')
+        
+        chart_title="title: 'Ping Statistics for "+stat_file[4:6]+"."+stat_file[2:4]+"."+stat_file[0:2]+" on "+hostname+"',"
+        current_template = current_template.replace('%chart_title%', chart_title)
+        
+        footer = '<b>number of records</b>: ' + str(data_counts) + '<br>\n\t'
+        footer += '<b>lowest latency</b>: ' + str(round(lowest_latency,2)) + ' ms<br>\n\t'
+        footer += '<b>highest latency</b>: ' + str(round(highest_latency,2)) + ' ms<br>\n\t'
+        footer += '<b>average latency</b>: ' + str(round(average_latency,2)) + ' ms<br><br>\n\t'
+        footer += 'powered by <b><a href="https://github.com/derwilly/pyngstats" target="_blank">pyngstats</a></b> version: ' + version + '<br><br>'
+        current_template = current_template.replace('%footer%', footer)
+
         try:
             with open(report_dir + '/' + stat_file + '.html', 'w+') as f:
-                html = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Ping Report</title>
-        <style type="text/css">
-             body { font-family:arial,helvetica; font-size:12px; }
-        </style>
-        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-        <script type="text/javascript">
-
-          google.load('visualization', '1.1', { packages: ['corechart', 'controls'] });
-          google.setOnLoadCallback(drawChart);
-
-          function drawChart() {
-            var data = google.visualization.arrayToDataTable([
-              ['Time', 'Count', 'Latency in ms', { role: 'style' }],"""
-                try:
-                    with open(stat_dir + '/' + stat_file, 'r') as fi:
-                        for line in fi:                          
-                            date = line[:8]
-                            latency = line[9:]
-                            latency = latency.replace('\n', '')
-                            latency = latency.replace(' ', '')
-                            if not latency:
-                                latency = 0
-                                packages_lost += 1
-                            try:
-                                latency_float = float(latency)
-                                latency_int = int(latency_float)
-                            except:
-                                continue
-                                
-                            # colors
-                            if latency_int >= 0 and latency_int <= 50:
-                                val = (latency_int - 0) * 5
-                                color = '#' + str(rgb_to_hex((val, 255, 0)))
-                            elif latency_int >= 51 and latency_int <= 75:
-                                val = (latency_int - 50) * 10
-                                color = '#' + str(rgb_to_hex((255, 255-val, 0)))
-                            elif latency_int >= 76 and latency_int <= 100:
-                                val = (latency_int - 75) * 10
-                                color = '#' + str(rgb_to_hex((255, 0, val)))
-                            elif latency_int >= 101 and latency_int <= 125:
-                                val = (latency_int - 100) * 10
-                                color = '#' + str(rgb_to_hex((255-val, 0, 255)))
-                            elif latency_int >= 126 and latency_int <= 150:
-                                val = (latency_int - 125) * 10
-                                color = '#' + str(rgb_to_hex((0, val, 255)))
-                            elif latency_int > 150:
-                                color = '#' + str(rgb_to_hex((0, 255, 255)))
-                            else:
-                                color = '#000000'
-                                
-                            data_counts = data_counts + 1
-                                
-                            html+="\n              ['"+str(date)+"', "+str(data_counts)+", "+str(latency)+", 'color: "+color+";'],"
-                            
-                            if(latency_float > 0):
-                                if latency_float > highest_latency:
-                                    highest_latency = latency_float
-                                if latency_float < lowest_latency:
-                                    lowest_latency = latency_float
-                                    
-                            
-                            sum_latency += latency_float
-                            
-                            if data_counts > 0:
-                                average_latency = sum_latency / data_counts
-                        
-                        report_list[stat_file] = { 'name': stat_file,
-                                                   'data_counts': data_counts,
-                                                   'latency': latency,
-                                                   'latency_int': latency_int,
-                                                   'latency_float': latency_float,
-                                                   'highest_latency': highest_latency,
-                                                   'lowest_latency': lowest_latency,
-                                                   'average_latency': average_latency,
-                                                   'sum_latency': sum_latency,
-                                                   'packages_lost': packages_lost }
-                        html = html[0:len(html)-1]
-                except ValueError as err:
-                    out(str(err), 'fail')
-                except IOError as err:
-                    out(str(err), 'fail')
-                except TypeError as err:
-                    out(str(err), 'fail')
-                except:
-                    out('Unexpected error:' +  str(sys.exc_info()[0]), 'fail')
-                html+="""                        
-            ]);
-            
-            var chart = new google.visualization.ChartWrapper({
-                chartType: 'ColumnChart', // try 'LineChart' as well
-                containerId: 'chart_div',
-                dataTable: data,
-                options: {"""
-                html+="title: 'Ping Statistics for "+stat_file[4:6]+"."+stat_file[2:4]+"."+stat_file[0:2]+" on "+hostname+"',"
-                html+="""
-                    width: 950,
-                    height: 450,
-                    chartArea: {
-                        left: 40,
-                        top: 20,
-                        width: 700,
-                        height: 350
-                    },
-                    hAxis: {
-                        title: 'Time', 
-                        titleTextStyle: {color: '#000'}, 
-                        slantedText: true, 
-                        slantedTextAngle: 45, 
-                        textStyle: { fontSize: 10 }, 
-                        },
-                    legend: {
-                        position: 'right',
-                        textStyle: {
-                            fontSize: 13
-                        }
-                    },
-                },
-                view: {
-                    columns: [0, 2, 3]
-                },
-            });
-                    
-            var control = new google.visualization.ControlWrapper({
-                controlType: 'ChartRangeFilter',
-                containerId: 'control_activity',
-                options: {
-                    filterColumnIndex: 1,
-                    ui: {
-                        chartType: 'LineChart',
-                        snapToData: true, // this bugger is not working
-                        chartOptions: {
-                            width: 950,
-                            height: 100,
-                            chartArea: {
-                                left: 40,
-                                top: 0,
-                                width: 700,
-                                height: 100
-                            },
-                            hAxis: {
-                                textPosition: 'none'
-                            }
-                        },
-                        chartView: {
-                            columns: [1, 2]
-                        },
-                            minRangeSize: 25,
-                    }
-                },
-                state: {
-                    range: {
-                        start: 0,
-                        end: 300
-                    }
-                }
-            });
-            
-            var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard'));
-            
-            google.visualization.events.addListener(control, 'statechange', function () {
-                var v = control.getState();
-                document.getElementById('dbgchart').innerHTML = v.range.start + ' -> ' + v.range.end;
-                return 0;
-            });
-
-            dashboard.bind(control, chart);
-            dashboard.draw(data);
-          }
-        </script>
-    </head>
-    <body>
-        <div id="dashboard">
-            <div id="chart_div"></div>
-            <div id="control_activity"></div>
-        </div>
-        <p style="padding-left:50px;">Range: <span id="dbgchart">Init</span>
-        </p>
-        <br>
-        <br>"""
-                html += '<b>number of records</b>: ' + str(data_counts) + '<br>\n'
-                html += '<b>lowest latency</b>: ' + str(round(lowest_latency,2)) + ' ms<br>\n'
-                html += '<b>highest latency</b>: ' + str(round(highest_latency,2)) + ' ms<br>\n'
-                html += '<b>average latency</b>: ' + str(round(average_latency,2)) + ' ms<br><br>\n'
-                html += 'powered by <b><a href="https://github.com/derwilly/pyngstats" target="_blank">pyngstats</a></b> version: ' + version + '<br><br>\n'
-                html+="""
-    </body>
-</html>"""
-                f.write(html)
-                #print(html)
+                f.write(current_template)
         except IOError:
             out('cant write file ' + report_dir + '/' + stat_file + '.html', 'fail')
-            
+    
+    
+    
+          
     # Generate the frameset (index.html)
     try:
-        with open(report_dir + '/index.html', 'w+') as f:
-            html = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Ping Report</title>
-    </head>
-    <frameset cols="200,*" rows="*" id="mainFrameset">"""
-            html+='<frame frameborder="0" id="frame_menu" src="menu.html" name="frame_menu" />'
-            html+='<frame frameborder="0" id="frame_content" src="overview.html" name="frame_content" />'
-            html+="""
-        <noframes>
-        <body>
-            <p>that page works better with a browser which support frames.</p>
-        </body>
-        </noframes>
-    </frameset>
-</html>"""
-            f.write(html)
+        with open(template_dir + '/index.html', 'r') as f:
+            template = f.read()
+            f.close()
     except IOError:
-       out('cant write file ' + path + '/index.html', 'fail')
+       out('cant read file ' + template_dir + '/index.html', 'fail')
+       raise SystemExit
+       
+    try:
+        with open(report_dir + '/index.html', 'w+') as f:
+            f.write(template)
+    except IOError:
+       out('cant write file ' + report_dir + '/index.html', 'fail')
+    
+    
+    
     
     # Generate overview.html
     try:
+        with open(template_dir + '/overview.html', 'r') as f:
+            template = f.read()
+            f.close()
+    except IOError:
+       out('cant read file ' + template_dir + '/overview.html', 'fail')
+       raise SystemExit
+       
+    c = 0
+    chart_data = ''
+    for i in file_list:
+        chart_data+="["+str(c)+", '"+report_list[i]['name'][4:6]+'.'+report_list[i]['name'][2:4]+'.'+report_list[i]['name'][0:2]+"', "+str(report_list[i]['highest_latency'])+", "+str(report_list[i]['lowest_latency'])+", "+str(round(report_list[i]['average_latency'],3))+", "+str(report_list[i]['packages_lost'])+"],\n              "
+        c += 1
+        
+    chart_data = chart_data[:len(chart_data)-16]
+        
+    template = template.replace('%chart_data%', chart_data)
+    chart_title="title: 'Ping Overview on "+hostname+"',"
+    template = template.replace('%chart_title%', chart_title)
+    powered_by = 'powered by <b><a href="https://github.com/derwilly/pyngstats" target="_blank">pyngstats</a></b> version: ' + version + '<br><br>'
+    template = template.replace('%powered_by%', powered_by)
+    
+    try:
         with open(report_dir + '/overview.html', 'w+') as f:
-            html = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Overview</title>
-        <style type="text/css">
-             body { font-family:arial,helvetica; font-size:12px; }
-        </style>
-        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-        <script type="text/javascript">
-
-          google.load('visualization', '1.1', { packages: ['corechart', 'controls'] });
-          google.setOnLoadCallback(drawChart);
-
-          function drawChart() {
-            var data = google.visualization.arrayToDataTable([
-              ['id', 'Day', 'highest latency in ms', 'lowest latency in ms', 'average latency in ms', 'lost packages'],
-            """
-            c = 0
-            for i in file_list:
-                html+="\n              ["+str(c)+", '"+report_list[i]['name'][4:6]+'.'+report_list[i]['name'][2:4]+'.'+report_list[i]['name'][0:2]+"', "+str(report_list[i]['highest_latency'])+", "+str(report_list[i]['lowest_latency'])+", "+str(round(report_list[i]['average_latency'],3))+", "+str(report_list[i]['packages_lost'])+"],"
-                c += 1
-            html+="""                        
-            ]);
-            
-            var chart = new google.visualization.ChartWrapper({
-                chartType: 'ColumnChart', // try 'LineChart' as well
-                containerId: 'chart_div',
-                dataTable: data,
-                options: {"""
-            html+="title: 'Ping Overview on "+hostname+"',"
-            html+="""
-                    width: 950,
-                    height: 450,
-                    chartArea: {
-                        left: 40,
-                        top: 20,
-                        width: 700,
-                        height: 350
-                    },
-                    colors: ['#777777', '#aaaaaa', '#cccccc', 'red'],
-                    hAxis: {
-                        title: 'Day', 
-                        titleTextStyle: {color: '#000'}, 
-                        slantedText: true, 
-                        slantedTextAngle: 45, 
-                        textStyle: { fontSize: 10 }, 
-                        },
-                    legend: {
-                        position: 'right',
-                        textStyle: {
-                            fontSize: 13
-                        }
-                    },
-                },
-                view: {
-                    columns: [1, 2, 3, 4, 5]
-                },
-            });
-                    
-            var control = new google.visualization.ControlWrapper({
-                controlType: 'ChartRangeFilter',
-                containerId: 'control_activity',
-                options: {
-                    filterColumnIndex: 0,
-                    ui: {
-                        chartType: 'LineChart',
-                        snapToData: true, // this bugger is not working
-                        chartOptions: {
-                            width: 950,
-                            height: 100,
-                            chartArea: {
-                                left: 40,
-                                top: 0,
-                                width: 700,
-                                height: 100
-                            },
-                            colors: ['#777777', '#aaaaaa', '#cccccc', 'red'],
-                            hAxis: {
-                                textPosition: 'none'
-                            }
-                        },
-                        chartView: {
-                            columns: [0, 2, 3, 4, 5]
-                        },
-                            minRangeSize: 1,
-                    }
-                },
-                state: {
-                    range: {
-                        start: 0,
-                        end: 30
-                    }
-                }
-            });
-            
-            var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard'));
-            
-            google.visualization.events.addListener(control, 'statechange', function () {
-                var v = control.getState();
-                document.getElementById('dbgchart').innerHTML = v.range.start + ' -> ' + v.range.end;
-                return 0;
-            });
-
-            dashboard.bind(control, chart);
-            dashboard.draw(data);
-          }
-        </script>
-    </head>
-    <body>
-        <div id="dashboard">
-            <div id="chart_div"></div>
-            <div id="control_activity"></div>
-        </div>
-        <p style="padding-left:50px;">Range: <span id="dbgchart">Init</span>
-        </p>
-        <br>
-        <br>"""
-            html += 'powered by <b><a href="https://github.com/derwilly/pyngstats" target="_blank">pyngstats</a></b> version: ' + version + '<br><br>\n'
-            html+="""
-    </body>
-</html>"""
-            f.write(html)
+            f.write(template)
     except IOError:
        out('cant write file ' + report_dir + '/overview.html', 'fail')
+    
+    
+      
        
     # Generate the menu.html
     try:
+        with open(template_dir + '/menu.html', 'r') as f:
+            template = f.read()
+            f.close()
+    except IOError:
+       out('cant read file ' + template_dir + '/menu.html', 'fail')
+       raise SystemExit
+            
+    file_list = reversed(file_list)
+    links = ''
+    for j in file_list:
+        links+='<a href="'+report_list[j]['name']+'.html" target="frame_content">'+report_list[j]['name'][4:6]+'.'+report_list[j]['name'][2:4]+'.'+report_list[j]['name'][0:2]+'</a><br>\n\t'
+    
+    template = template.replace('%links%', links)
+    
+    try:
         with open(report_dir + '/menu.html', 'w+') as f:
-            html = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Menu</title>
-        <style type="text/css">
-             body { font-family:arial,helvetica; font-size:12px; }
-        </style>
-    </head>
-    <body>
-        <b>Available Reports:</b><br>"""
-            
-            html+='<a href="overview.html" target="frame_content">Overview</a><br>'
-            
-            file_list = reversed(file_list)
-            for j in file_list:
-                html+='<a href="'+report_list[j]['name']+'.html" target="frame_content">'+report_list[j]['name'][4:6]+'.'+report_list[j]['name'][2:4]+'.'+report_list[j]['name'][0:2]+'</a><br>'
-                
-            html+="""
-    </body>
-</html>"""
-            f.write(html)
+            f.write(template)
     except IOError:
        out('cant write file ' + report_dir + '/menu.html', 'fail')

@@ -58,10 +58,6 @@ Commandline interface
 | --version             | print version info                                  |
 +-----------------------+-----------------------------------------------------+
 
-.. image:: https://raw.github.com/derwilly/pyngstats/master/screenshots/daily.png
-    :alt: Pyngstats Daily
-    :align: center
-  
 Pinging
 =======
 Use Pygnstats in combination with a cronjob to get a bunch of values the day over to monitor your connection.
@@ -69,7 +65,7 @@ Use Pygnstats in combination with a cronjob to get a bunch of values the day ove
 .. code-block:: bash
 
     # pinging
-    */1 * * * *    python3 /home/uer/pyngstats/pyngstats.py --ping --host=8.8.8.8 --stat_dir=/home/user/reports > /home/user/pyngstats/ping.log
+    */1 * * * *    python3 /home/user/pyngstats/pyngstats.py --ping --host=8.8.8.8 --stat_dir=/home/user/reports > /home/user/pyngstats/ping.log
 
 And make the report generate daily
 
@@ -78,7 +74,23 @@ And make the report generate daily
     # report
     59 23 * * *    python3 /home/user/pyngstats/pyngstats.py --report --stat_dir=/home/user/reports --report_dir=/var/www/report > /home/user/pygnstats/ping.log
 
-.. image:: https://raw.github.com/derwilly/pyngstats/master/screenshots/overview.png
-    :alt: Pyngstats Overview
-    :align: center
+Templates
+=========
+Pyngstats uses html-templates to for its reports. You can find them in the templates/ directory.
+
++-----------------------+-----------------------------------------------------+
+| template              | Description                                         |
++=======================+=====================================================+
+| index.html            | the frameset for the entire report                  |
++-----------------------+-----------------------------------------------------+
+| menu.html             | menu which contains all daily reports               |
++-----------------------+-----------------------------------------------------+
+| overview.html         | summery of the daily reports                        |
++-----------------------+-----------------------------------------------------+
+| daily.html            | template for the daily reports                      |
++-----------------------+-----------------------------------------------------+
+
+Platforms
+=========
+Pyngstats is only available for GNU/Linux at the moment. (not tested on Windows or Mac yet)
 
