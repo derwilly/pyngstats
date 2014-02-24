@@ -1,7 +1,10 @@
-pyngstats
+=========
+Pyngstats
 =========
 
 A Python script for creating long term ping statistics
+
+**Table of Contents**
 
 .. contents::
     :local:
@@ -9,52 +12,66 @@ A Python script for creating long term ping statistics
     :backlinks: none
 
 Usage
------
+=====
 The usage of Pyngstats is simple, just take a look at the examples below
 
+.. code-block:: bash
+
     # ping a host, stats will be created
-    python3 pygnstats.py --ping
+    $ python3 pygnstats.py --ping
     
 To generate a report, just use
 
-    python3 pygnstats.py --report
+.. code-block:: bash
+    
+    $ python3 pygnstats.py --report
     
 Commandline interface
----------------------
+=====================
 
-    # generate a html report
-    --report
-    
-    # ping a host
-    --ping
-    
-    # define a report directory
-    --report_dir
-    
-    # define a statistics directory
-    --stat_dir
-    
-    # define a specific host to ping
-    --host
-    
-    # timeout for ping in secounds
-    --timeout
-    
-    # printing the version
-    --version
++-----------------------+-----------------------------------------------------+
+| Parameter             | Description                                         |
++=======================+=====================================================+
+| --report              | generates a html report                             |
++-----------------------+-----------------------------------------------------+
+| --ping                | ping a host                                         |
++-----------------------+-----------------------------------------------------+
+| --report_dir          | define a report directory                           |
++-----------------------+-----------------------------------------------------+
+| --stat_dir            | define a statistics directory                       |
++-----------------------+-----------------------------------------------------+
+| --host                | define a specific host to ping                      |
++-----------------------+-----------------------------------------------------+
+| --timeout             | timeout for ping in secounds                        |
++-----------------------+-----------------------------------------------------+
+| --count               | ping the host x times                               |
++-----------------------+-----------------------------------------------------+
+| --interval            | ping the host every x secounds                      |
++-----------------------+-----------------------------------------------------+
+| --version             | print version info                                  |
++-----------------------+-----------------------------------------------------+
 
-![Pyngstats Daily](https://raw.github.com/derwilly/pyngstats/master/screenshots/daily.png)
+.. image:: https://raw.github.com/derwilly/pyngstats/master/screenshots/daily.png
+    :alt: Pyngstats Daily
+    :align: center
   
 Pinging
--------
+=======
 Use Pygnstats in combination with a cronjob to get a bunch of values the day over to monitor your connection.
+
+.. code-block:: bash
 
     # pinging
     */1 * * * *    python3 /home/uer/pyngstats/pyngstats.py --ping --host=8.8.8.8 > /home/user/pyngstats/ping.log
 
 And make the report generate daily
-   
+
+.. code-block:: bash
+
     # report
     59 23 * * *    python3 /home/user/pyngstats/pyngstats.py --report > /home/user/pygnstats/ping.log
-    
-![Pyngstats Overview](https://raw.github.com/derwilly/pyngstats/master/screenshots/overview.png)
+
+.. image:: https://raw.github.com/derwilly/pyngstats/master/screenshots/overview.png
+    :alt: Pyngstats Overview
+    :align: center
+
