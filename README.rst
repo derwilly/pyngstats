@@ -3,6 +3,11 @@ pyngstats
 
 A Python script for creating long term ping statistics
 
+.. contents::
+    :local:
+    :depth: 1
+    :backlinks: none
+
 Usage
 -----
 The usage of Pyngstats is simple, just take a look at the examples below

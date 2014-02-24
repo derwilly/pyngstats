@@ -45,7 +45,7 @@ report_dir = os.path.dirname(os.path.realpath(__file__)) + '/reports'
 stat_dir = os.path.dirname(os.path.realpath(__file__)) + '/stats'
 
 # create report?
-report = False
+do_report = False
 
 # do a ping?
 do_ping = False
@@ -173,7 +173,7 @@ def ping(loops = 0):
 # command line options
 for i in sys.argv:
     if '--report' in i:
-        report = True
+        do_report = True
     if '--ping' in i:
         do_ping = True
     if '--report_dir=' in i:
@@ -206,9 +206,11 @@ for i in sys.argv:
                 timeout = ti
                 out('using timeout ' + str(timeout) + ' secounds', 'info')
             else:
-                out('timeout must be an integer between 1 and 30.', 'fail')
+                timeout = 3
+                out('timeout must be an integer between 1 and 30. setting timeout = 3', 'warn')
         except ValueError:
-            out('timeout must be an integer between 1 and 30.', 'fail')
+            timeout = 3
+            out('timeout must be an integer between 1 and 30. setting timeout = 3', 'warn')
     if '--count' in i:
         tmp = str(re.findall(r"^--count=.*", i)[0])
         try:
@@ -218,10 +220,10 @@ for i in sys.argv:
                 out('using count = ' + str(count) + '.', 'info')
             else:
                 count = 1
-                out('count must be an integer > 0. setting count = 1', 'fail')
+                out('count must be an integer > 0. setting count = 1', 'warn')
         except ValueError:
             count = 1
-            out('count must be an integer > 0. setting count = 1', 'fail')
+            out('count must be an integer > 0. setting count = 1', 'warn')
     if '--interval' in i:
         tmp = str(re.findall(r"^--interval=.*", i)[0])
         try:
@@ -231,10 +233,10 @@ for i in sys.argv:
                 out('using interval = ' + str(interval) + '.', 'info')
             else:
                 interval = 1
-                out('interval must be an integer > 0. setting interval = 1', 'fail')
+                out('interval must be an integer > 0. setting interval = 1', 'warn')
         except ValueError:
             interval = 1
-            out('interval must be an integer > 0. setting interval = 1', 'fail')
+            out('interval must be an integer > 0. setting interval = 1', 'warn')
     if '--version' in i:
         print_version()
     if '--help' in i:
@@ -244,8 +246,8 @@ for i in sys.argv:
 if do_ping:
     ping()
 
-# if report = True, generate the hmtl reports    
-if report:
+# if do_report = True, generate the hmtl reports    
+if do_report:
     report_list = {}
     
     # create report directory if not exists
