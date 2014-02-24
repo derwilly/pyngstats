@@ -3,8 +3,8 @@
 pygnstats
 ==============================================================================
 Author:   Ferdinand Saufler <mail@saufler.de>
-Version:  0.22
-Date:     23.02.2014
+Version:  0.23
+Date:     24.02.2014
 
 For documentation please visit https://github.com/derwilly/pyngstats
 ==============================================================================
@@ -18,7 +18,7 @@ import time
 from subprocess import check_output, CalledProcessError
 
 # version
-version = '0.22'
+version = '0.23'
 
 # host
 host = 'example.com' # or 192.168.0.1
@@ -31,6 +31,9 @@ timeout = '3'
 
 # count, stop after sending x requests
 count = 1
+
+# count the loops
+loop = 0
 
 # wait x secounds until next request
 interval = 1
@@ -129,7 +132,48 @@ def print_help():
           '      waiting x secounds until next request.\n' +
           '  \033[1m --version \033[22m\n' +
           '      prints the version of this script.\n')
-                        
+          
+def ping():
+    latency_str = ''
+    pinfo = b''
+    global loop, count
+    loop += 1
+    
+    if not create_stat_dir(stat_dir):
+        ('failed to create stat_dir in do_ping procedure.', 'fail')
+        raise SystemExit
+    
+    try:
+        pinfo = str(check_output(['ping', '-c', '1', '-W', timeout , host]))
+    except CalledProcessError as err:
+        if int(err.returncode) == 1:
+            out('ping returned exit status "1", no reply from host.', 'fail')
+        elif int(err.returncode) == 2:
+            out('ping returned exit status "2", unknown error.', 'fail')
+        else:
+            out('ping returned an unknown error.', 'fail')
+    except Exception as err:
+        print(str(err.message))
+
+    try:
+        latency_str = str(re.findall(r"time=[0-9]{1,4}.[0-9]{1,4}", pinfo)[0])
+    except IndexError:
+        out('Index error in ping procedure.', 'fail')
+    except TypeError:
+        out('Type error in ping procedure', 'fail')
+        
+    latency = latency_str[5:]
+        
+    try:
+        with open(stat_dir + '/' + time.strftime('%y%m%d'), 'a') as f:
+            f.write(time.strftime('%H:%M:%S') + ' ' + latency + '\n')
+    except IOError:
+        out('cant write to file ' + stat_dir + '/' + time.strftime('%y%m%d'), 'fail')
+        
+    if loop < count:
+        time.sleep(interval)
+        ping()
+             
 # command line options
 for i in sys.argv:
     if '--report' in i:
@@ -175,7 +219,7 @@ for i in sys.argv:
             tmp = int(tmp[8:])
             if tmp > 0:
                 count = tmp
-                out('using count = ' + count + '.', 'info')
+                out('using count = ' + str(count) + '.', 'info')
             else:
                 count = 1
                 out('count must be an integer > 0. setting count = 1', 'fail')
@@ -188,7 +232,7 @@ for i in sys.argv:
             tmp = int(tmp[11:])
             if tmp > 0:
                 interval = tmp
-                out('using interval = ' + interval + '.', 'info')
+                out('using interval = ' + str(interval) + '.', 'info')
             else:
                 interval = 1
                 out('interval must be an integer > 0. setting interval = 1', 'fail')
@@ -202,39 +246,7 @@ for i in sys.argv:
 
 # if do_ping = True, go on and ping the host           
 if do_ping:
-    latency_str = ''
-    pinfo = b''
-    
-    if not create_stat_dir(stat_dir):
-        ('failed to create stat_dir in do_ping procedure.', 'fail')
-        raise SystemExit
-    
-    try:
-        pinfo = str(check_output(['ping', '-c', '1', '-W', timeout , host]))
-    except CalledProcessError as err:
-        if int(err.returncode) == 1:
-            out('ping returned exit status "1", no reply from host.', 'fail')
-        elif int(err.returncode) == 2:
-            out('ping returned exit status "2", unknown error.', 'fail')
-        else:
-            out('ping returned an unknown error.', 'fail')
-    except Exception as err:
-        print(str(err.message))
-
-    try:
-        latency_str = str(re.findall(r"time=[0-9]{1,4}.[0-9]{1,4}", pinfo)[0])
-    except IndexError:
-        out('Index error in ping procedure.', 'fail')
-    except TypeError:
-        out('Type error in ping procedure', 'fail')
-        
-    latency = latency_str[5:]
-        
-    try:
-        with open(stat_dir + '/' + time.strftime('%y%m%d'), 'a') as f:
-            f.write(time.strftime('%H:%M:%S') + ' ' + latency + '\n')
-    except IOError:
-        out('cant write to file ' + stat_dir + '/' + time.strftime('%y%m%d'), 'fail')
+    ping()
 
 # if report = True, generate the hmtl reports    
 if report:
