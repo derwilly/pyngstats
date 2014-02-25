@@ -3,8 +3,8 @@
 pygnstats
 ==============================================================================
 Author:   Ferdinand Saufler <mail@saufler.de>
-Version:  0.24
-Date:     24.02.2014
+Version:  0.25
+Date:     25.02.2014
 
 For documentation please visit https://github.com/derwilly/pyngstats
 ==============================================================================
@@ -17,7 +17,7 @@ import time
 from subprocess import check_output, CalledProcessError
 
 # version
-version = '0.24'
+version = '0.25'
 
 # host
 host = 'example.com' # or 192.168.0.1
