@@ -38,19 +38,22 @@ interval = 1
 path = os.path.dirname(os.path.realpath(__file__))
 
 # path for html reports
-report_dir = os.path.dirname(os.path.realpath(__file__)) + '/reports'
+report_dir = path + '/reports'
 
 # path for measured data
-stat_dir = os.path.dirname(os.path.realpath(__file__)) + '/stats'
+stat_dir = path + '/stats'
 
 # path for html-templates
-template_dir = os.path.dirname(os.path.realpath(__file__)) + '/templates'
+template_dir = path + '/templates'
 
 # create report?
 do_report = False
 
 # do a ping?
 do_ping = False
+
+# show debug infos?
+debug = False
 
 # Hex color (FFFFFF) to RGB tuple (255,255,255)
 def hex_to_rgb(value):
@@ -130,8 +133,10 @@ def print_help():
           '    stop after sending "count" requests.\n' +
           '\033[1m --interval \033[22m\n' +
           '    waiting x secounds until next request.\n' +
+          '\033[1m --debug \033[22m\n' +
+          '    print additional debug information.\n' +
           '\033[1m --version \033[22m\n' +
-          '    prints the version of this script.\n')
+          '    print version info.\n')
           
 def ping(loops = 0):
     latency_str = ''
@@ -174,6 +179,9 @@ def ping(loops = 0):
         ping(loops)
              
 # command line options
+if '--debug' in sys.argv:
+    debug = True
+        
 for i in sys.argv:
     if '--report' in i:
         do_report = True
@@ -184,7 +192,8 @@ for i in sys.argv:
         rdir = rdir[13:]
         if create_report_dir(rdir):
             report_dir = rdir
-            out('using report directory ' + report_dir, 'info')
+            if debug:
+                out('using report directory ' + report_dir, 'info')
         else:
             out('cant use report_dir. please check the path.', 'fail')
             raise SystemExit
@@ -193,47 +202,52 @@ for i in sys.argv:
         sdir = sdir[11:]
         if create_stat_dir(sdir):
             stat_dir = sdir
-            out('using stats directory ' + stat_dir, 'info')
+            if debug:
+                out('using stats directory ' + stat_dir, 'info')
         else:
             out('cant use stat_dir. please check the path.', 'fail')
             raise SystemExit
     if '--host=' in i:
         ho = str(re.findall(r"^--host=.*", i)[0])
         host = ho[7:]
-        out('using host ' + host + ' for ping.', 'info')
+        if debug:
+            out('using host ' + host + ' for ping.', 'info')
     if '--timeout=' in i:
         ti = str(re.findall(r"^--timeout=.*", i)[0])
         ti = ti[10:]
         try:
             if int(ti) > 0 and int(ti) <= 30:
                 timeout = ti
-                out('using timeout ' + str(timeout) + ' secounds', 'info')
+                if debug:
+                    out('using timeout ' + str(timeout) + ' secounds', 'info')
             else:
                 timeout = 3
                 out('timeout must be an integer between 1 and 30. setting timeout = 3', 'warn')
         except ValueError:
             timeout = 3
             out('timeout must be an integer between 1 and 30. setting timeout = 3', 'warn')
-    if '--count' in i:
+    if '--count=' in i:
         tmp = str(re.findall(r"^--count=.*", i)[0])
         try:
             tmp = int(tmp[8:])
             if tmp > 0:
                 count = tmp
-                out('using count = ' + str(count) + '.', 'info')
+                if debug:
+                    out('using count = ' + str(count) + '.', 'info')
             else:
                 count = 1
                 out('count must be an integer > 0. setting count = 1', 'warn')
         except ValueError:
             count = 1
             out('count must be an integer > 0. setting count = 1', 'warn')
-    if '--interval' in i:
+    if '--interval=' in i:
         tmp = str(re.findall(r"^--interval=.*", i)[0])
         try:
             tmp = int(tmp[11:])
             if tmp > 0:
                 interval = tmp
-                out('using interval = ' + str(interval) + '.', 'info')
+                if debug:
+                    out('using interval = ' + str(interval) + '.', 'info')
             else:
                 interval = 1
                 out('interval must be an integer > 0. setting interval = 1', 'warn')
