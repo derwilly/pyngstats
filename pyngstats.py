@@ -3,7 +3,7 @@
 pygnstats
 ==============================================================================
 Author:   Ferdinand Saufler <mail@saufler.de>
-Version:  0.26.1
+Version:  0.26.2
 Date:     26.02.2014
 
 For documentation please visit https://github.com/derwilly/pyngstats
@@ -17,7 +17,7 @@ import time
 from subprocess import check_output, CalledProcessError
 
 # version
-version = '0.26.1'
+version = '0.26.2'
 
 # host
 host = 'example.com'  # or 192.168.0.1
@@ -89,7 +89,7 @@ def out(msg, ctype='info'):
               time.strftime('%d.%m.%y %H:%M') + ' ' + msg)
 
 
-# create report directory, if no exists
+# create report directory, if not exists
 def create_report_dir(p):
     if os.path.exists(p):
         return True
@@ -103,7 +103,7 @@ def create_report_dir(p):
             return False
 
 
-# create stat directory, if no exists
+# create stat directory, if not exists
 def create_stat_dir(p):
     if os.path.exists(p):
         return True
@@ -113,7 +113,7 @@ def create_stat_dir(p):
             out('stat_dir ' + p + ' created.', 'ok')
             return True
         except:
-            out('cant create stats.', 'fail')
+            out('cant create stats_dir.', 'fail')
             return False
 
 
@@ -449,7 +449,7 @@ if do_report:
         out('cant write file ' + report_dir + '/overview.html', 'fail')
     
     
-    # Generate the menu.html
+    # Generate menu.html
     try:
         with open(template_dir + '/menu.html', 'r') as f:
             template = f.read()
