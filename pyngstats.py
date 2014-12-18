@@ -15,6 +15,7 @@ import re
 import sys
 import time
 from subprocess import check_output, CalledProcessError
+import platform
 
 # version
 version = '0.26.2'
@@ -23,7 +24,7 @@ version = '0.26.2'
 host = 'example.com'  # or 192.168.0.1
 
 # this hostname
-hostname = os.uname()[1]
+hostname = platform.uname()[1]
 
 # timeout in secounds
 timeout = '3'
