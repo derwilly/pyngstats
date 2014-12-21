@@ -3,7 +3,7 @@
 pygnstats
 ==============================================================================
 Author:   Ferdinand Saufler <mail@saufler.de>
-Version:  0.26.2
+Version:  0.27.0
 Date:     21.12.2014
 
 For documentation please visit https://github.com/derwilly/pyngstats
