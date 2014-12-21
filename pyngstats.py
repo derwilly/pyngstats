@@ -15,6 +15,7 @@ import re
 import sys
 import time
 from subprocess import check_output, CalledProcessError
+import platform
 
 # version
 version = '0.26.2'
@@ -23,7 +24,7 @@ version = '0.26.2'
 host = 'example.com'  # or 192.168.0.1
 
 # this hostname
-hostname = os.uname()[1]
+hostname = platform.uname()[1]
 
 # timeout in secounds
 timeout = '3'
@@ -71,7 +72,7 @@ def rgb_to_hex(rgb):
 # a formatted, colored output
 def out(msg, ctype='info'):
     if not msg or not ctype:
-        return
+        return "error: No message or info"
     else:
         if ctype == "warn":
             srt = "warn"
@@ -158,9 +159,10 @@ def ping(loops=0):
         raise SystemExit
 
     try:
-        pinfo = str(check_output(['ping', '-c', '1', '-W', timeout, host]))
+        pinfo = str(check_output(['ping', '-c', '1', '-w', timeout, host]))
     except CalledProcessError as err:
         if int(err.returncode) == 1:
+            print(err)
             out('ping returned exit status "1", no reply from host.', 'fail')
         elif int(err.returncode) == 2:
             out('ping returned exit status "2", unknown error.', 'fail')
@@ -185,7 +187,10 @@ def ping(loops=0):
         out('cant write to file ' + stat_dir + '/' +
             time.strftime('%y%m%d'), 'fail')
 
-    if loops < count:
+    if count == 0:
+        time.sleep(interval)
+        ping()
+    elif loops < count:
         time.sleep(interval)
         ping(loops)
 
